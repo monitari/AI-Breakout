@@ -9,8 +9,10 @@ from collections import deque
 import math
 import pygame.mixer
 pygame.mixer.init()
-beep_sound = pygame.mixer.Sound("assets/8-bit-laser-151672.mp3")
+beep_sound = pygame.mixer.Sound("assets/8-bit-explosion-95847.mp3")
+pad_sound = pygame.mixer.Sound("assets/retro-jump-3-236683.mp3")
 death_sound = pygame.mixer.Sound("assets/retro-explode-1-236678.mp3")
+wall_sound = pygame.mixer.Sound("assets/8-bit-laser-151672.mp3")
 
 class Config:
     # 화면 설정
@@ -26,7 +28,7 @@ class Config:
     # 게임 요소 설정
     GAME = {
         'PADDLE_WIDTH': 120,
-        'BALL_SIZE': 15,
+        'BALL_SIZE': 10,
         'BRICK_WIDTH': 50,
         'BRICK_HEIGHT': 20,
         'BRICK_GAP': 2,
@@ -93,6 +95,7 @@ class GameObjects:
             self.base_speed = Config.GAME['BASE_SPEED']
             self.speed_multiplier = 1.0  # 속도 증가율 초기화
             self.beep_sound = beep_sound
+            self.pad_sound = pad_sound
             self.reset()
 
         def reset(self):
@@ -114,8 +117,10 @@ class GameObjects:
             # 정밀 충돌 검사 메서드
             if self.rect.left <= 0 or self.rect.right >= Config.SCREEN_SIZE[0]:
                 self.speed_x *= -1
+                wall_sound.play()  # 벽 충돌 사운드 추가
             if self.rect.top <= 0:
                 self.speed_y *= -1
+                wall_sound.play()  # 벽 충돌 사운드 추가
 
         def reflect(self, surface_type, collision_point=None):
             if surface_type == "paddle":
@@ -124,6 +129,7 @@ class GameObjects:
                 angle = offset * math.pi/3  # -60°~+60° 범위
                 self.speed_x = self.base_speed * math.sin(angle) * self.speed_multiplier
                 self.speed_y = -abs(self.base_speed * math.cos(angle)) * self.speed_multiplier
+                self.pad_sound.play()
                 
             elif surface_type == "brick":
                 # 벽돌 충돌: 충돌 면 판별
@@ -132,11 +138,7 @@ class GameObjects:
                 else:
                     self.speed_x *= -1
                 #self.speed_multiplier *= 1.01 # 속도 증가율 증가 (선택 사항)
-
-            elif surface_type == "wall":
-                self.speed_x *= -1
-            
-            self.beep_sound.play()
+                self.beep_sound.play()
 
         def _handle_brick_collision(self, brick):
             """벽돌 충돌 처리 최적화 버전"""
